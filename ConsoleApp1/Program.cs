@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace ConsoleApp1
@@ -8,8 +9,9 @@ namespace ConsoleApp1
     {
         // sends a write message containing, the opcode W
         // the filename, the location/offset, and the data to be written 
-        void SendWrite(string filename, int location, byte[] data )
+        static void SendWrite(string filename, int location, byte[] data )
         {
+            byte opcode  = (byte)'W';
             
         }
         // sends a read message containing, the opcode R
@@ -22,14 +24,21 @@ namespace ConsoleApp1
         //TODO change this to a full file chunking system, then feed into the sendWrite function one piece at a time 
         public static void FileChunk(string path)
         {
-            
-            byte[] chunk = new byte[10];
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            byte [] file_bytes = File.ReadAllBytes(path);
+            for (int i = 0; i <= file_bytes.Length; i+=10)
             {
-                // TODO change the hardcoded 10 to a chunk size variable if you want, not really needed though 
-                int sizeval = fs.Read(chunk,0, 10);
-                Console.WriteLine(sizeval);
-                Console.WriteLine(chunk);
+                byte [] sendchunk  = new byte[10];
+                for (int j = i; j <= (i + 10); j++)
+                {
+                    Console.WriteLine(file_bytes[j]);
+
+                    sendchunk.Append(file_bytes[j]);
+                    
+                    
+                }
+
+                SendWrite(path, i, sendchunk);
+
             }
         }
 
@@ -38,7 +47,7 @@ namespace ConsoleApp1
             Console.WriteLine(args.Length);
             if (args.Length == 0)
             {
-                System.Console.WriteLine("Please enter a an argument.");
+                Console.WriteLine("Please enter a an argument.");
                 return;
 
             }
