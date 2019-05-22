@@ -13,9 +13,9 @@ namespace ConsoleApp1
         //TODO: FIND APPROPRIATE FILLER WHEN BYTECODE IS SHORTER THAN SET LENGTH 
         private static void SendWrite(string filename, int location, byte[] data,bool extracopy)
         {
-            var opcode = (byte) 'W';
-            var locationcode = BitConverter.GetBytes(location);
-            var lengthcode = (byte) data.Length;
+            Byte opcode = (byte) 'W';
+            Byte [] locationcode = BitConverter.GetBytes(location);
+            Byte lengthcode = (byte) data.Length;
             Console.WriteLine(locationcode.Length);
             if (extracopy == false)
             {
@@ -29,7 +29,7 @@ namespace ConsoleApp1
                     Buffer.BlockCopy(filecode,0,sendarray,1, filecode.Length);
                     Buffer.BlockCopy(locationcode,0,sendarray,33,4);
                     sendarray[37] = lengthcode;
-                    Buffer.BlockCopy(data,0,sendarray,38,10);
+                    Buffer.BlockCopy(data,0,sendarray,38,data.Length);
                     Udpsend(sendarray, 'S');
                 }
             }
@@ -73,39 +73,65 @@ namespace ConsoleApp1
             byte [] fileBytes = File.ReadAllBytes(path);
             Console.WriteLine(fileBytes.Length);
             int size = fileBytes.Length;
-            for (var i = 0; i <= fileBytes.Length; i += 10)
+            for (int i = 0; i <= fileBytes.Length; i += 10)
             {
-                var sendchunk = new byte[10];
-                for (var j = i; j <= i + 9; j++)
-                    //Console.WriteLine(file_bytes[j]);
-                    //THIS MAYBE AN ISSUE IF THE LAST BIT DOES NOT APPEAR
-                    // CHANGE THIS TO THE LENGTH OF THE ARRAY IN THAT CASE 
-                    if (j >= fileBytes.Length - 1)
-                    {
-                    }
-                    else
-                    {
-                        sendchunk[j - i] = fileBytes[j];
-                    }
-
-                if (extracopy == true)
+                if (size - i >= 10)
                 {
-                    SendWrite(path, i, sendchunk,true);
-                }
-                else if (extracopy == false)
-                {
-                    SendWrite(path, i, sendchunk,false);
-                }
+                    byte [] sendchunk = new byte[10];
+                    for (int j = i; j <= i + 9; j++)
+                        //Console.WriteLine(file_bytes[j]);
+                        //THIS MAYBE AN ISSUE IF THE LAST BIT DOES NOT APPEAR
+                        // CHANGE THIS TO THE LENGTH OF THE ARRAY IN THAT CASE 
+                        if (j >= fileBytes.Length )
+                        {
+                        }
+                        else
+                        {
+                            sendchunk[j - i] = fileBytes[j];
+                        }
 
+                    if (extracopy == true)
+                    {
+                        SendWrite(path, i, sendchunk,true);
+                    }
+                    else if (extracopy == false)
+                    {
+                        SendWrite(path, i, sendchunk,false);
+                    }
+                }
+                else
+                {
+                    byte[] sendchunk = new byte[size - i];
+                    for (int j = i; j <= i + 9; j++)
+                        //Console.WriteLine(file_bytes[j]);
+                        //THIS MAYBE AN ISSUE IF THE LAST BIT DOES NOT APPEAR
+                        // CHANGE THIS TO THE LENGTH OF THE ARRAY IN THAT CASE 
+                        if (j >= fileBytes.Length )
+                        {
+                        }
+                        else
+                        {
+                            sendchunk[j - i] = fileBytes[j];
+                        }
+
+                    if (extracopy == true)
+                    {
+                        SendWrite(path, i, sendchunk,true);
+                    }
+                    else if (extracopy == false)
+                    {
+                        SendWrite(path, i, sendchunk,false);
+                    }
+                }
             }
         }
         //TODO: add repeated function system using the functype variable to correctly resend  
         private static void Udpsend(byte[] sendarray, char functype)
         {
-            var successful = false;
-            var sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            var serveradress = IPAddress.Parse("127.0.0.1");
-            var endPoint = new IPEndPoint(serveradress, 1982);
+            bool successful = false;
+            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            IPAddress serveradress = IPAddress.Parse("127.0.0.1");
+            IPEndPoint endPoint = new IPEndPoint(serveradress, 1982);
             sock.SendTo(sendarray, endPoint);
         }
 
