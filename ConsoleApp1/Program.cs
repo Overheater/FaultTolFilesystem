@@ -4,13 +4,13 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+//C:\Users\Ian\Documents\6890\FirstProject\targetfolder
 namespace ConsoleApp1
 {
     internal class StorageSystem
     {
         // sends a write message containing, the opcode W
-        // the filename, the location/offset, and the data to be written 
-        //TODO: FIND APPROPRIATE FILLER WHEN BYTECODE IS SHORTER THAN SET LENGTH 
+        // the filename, the location/offset, and the data to be written
         private static void SendWrite(string filename, int location, byte[] data,bool extracopy)
         {
             Byte opcode = (byte) 'W';
@@ -21,16 +21,20 @@ namespace ConsoleApp1
             {
                 for (int i = 0; i<3;i++ )
                 {
-                    filename = i.ToString() + filename;
-                    Console.WriteLine(filename);
+                    string copyname = i.ToString() + filename;
+                    Console.WriteLine(copyname);
                     var sendarray = new byte[48];
                     sendarray[0] = opcode;
-                    Byte [] filecode = Encoding.ASCII.GetBytes(filename);
+                    Byte [] filecode = Encoding.ASCII.GetBytes(copyname);
                     Buffer.BlockCopy(filecode,0,sendarray,1, filecode.Length);
                     Buffer.BlockCopy(locationcode,0,sendarray,33,4);
                     sendarray[37] = lengthcode;
                     Buffer.BlockCopy(data,0,sendarray,38,data.Length);
-                    Udpsend(sendarray, 'S');
+                    bool sent = Udpsend(sendarray);
+                    while (sent == false)
+                    {
+                        sent = Udpsend(sendarray);
+                    }
                 }
             }
             // ReSharper disable once RedundantBoolCompare
@@ -38,35 +42,78 @@ namespace ConsoleApp1
             {
              for (int i = 0; i<6;i++ )
              {
-                var filecode = Encoding.ASCII.GetBytes(filename);
-                var sendarray = new byte[48];
-                sendarray[0] = opcode;
-                filecode.CopyTo(sendarray, 1);
-                locationcode.CopyTo(sendarray, 33);
-                sendarray[37] = lengthcode;
-                data.CopyTo(sendarray, 38);
-                Udpsend(sendarray, 'S');
+                 string copyname = i.ToString() + filename;
+                 var sendarray = new byte[48];
+                 sendarray[0] = opcode;
+                 Byte [] filecode = Encoding.ASCII.GetBytes(copyname);
+                 Buffer.BlockCopy(filecode,0,sendarray,1, filecode.Length);
+                 Buffer.BlockCopy(locationcode,0,sendarray,33,4);
+                 sendarray[37] = lengthcode;
+                 Buffer.BlockCopy(data,0,sendarray,38,data.Length);
+                 bool sent = Udpsend(sendarray);
+                 while (sent == false)
+                 {
+                     sent = Udpsend(sendarray);
+                 }
              }
             }
         }
 
         // sends a read message containing, the opcode R
         // the filename,and the location/offset
-        //TODO create a repeat system that recalls itself if the read send fails
-        //TODO: Form a voting system, as well as creating a repeating system if the write send fails 
-        private void SendRead(string filename, int location)
+        //TODO: create an array of byte arrays to send down to the read chunk function. 
+        private byte[][] SendRead(string filename, int location,bool extracopy)
         {
-            var opcode = (byte) 'R';
-            var filecode = Encoding.ASCII.GetBytes(filename);
-            var locationcode = BitConverter.GetBytes(location);
-            var sendarray = new byte[37];
-            sendarray[0] = opcode;
-            filecode.CopyTo(sendarray,1);
-            locationcode.CopyTo(sendarray,33);
-            Udpsend(sendarray,'R');
+            if (extracopy == true)
+            {
+                byte [][] readvals = new byte[6][];
+                for (int i = 0; i < 6; i++)
+                {
+                    string copyname = i.ToString() + filename;
+                    var opcode = (byte) 'R';
+                    var filecode = Encoding.ASCII.GetBytes(copyname);
+                    var locationcode = BitConverter.GetBytes(location);
+                    var sendarray = new byte[37];
+                    sendarray[0] = opcode;
+                    filecode.CopyTo(sendarray,1);
+                    locationcode.CopyTo(sendarray,33);
+                    bool sent = Udpsend(sendarray);
+                    while (sent == false)
+                    {
+                         sent = Udpsend(sendarray);
+                    }
 
+
+                }
+                return readvals;
+            }
+            else
+            {
+                byte [][] readvals = new byte[3][];
+                for (int i = 0; i <3; i++)
+                {
+                    
+                    string copyname = i.ToString() + filename;
+                    var opcode = (byte) 'R';
+                    var filecode = Encoding.ASCII.GetBytes(copyname);
+                    var locationcode = BitConverter.GetBytes(location);
+                    var sendarray = new byte[37];
+                    sendarray[0] = opcode;
+                    filecode.CopyTo(sendarray,1);
+                    locationcode.CopyTo(sendarray,33);
+                    bool sent = Udpsend(sendarray);
+                    while (sent == false)
+                    {
+                         sent = Udpsend(sendarray);
+                    }
+                    
+
+                }
+                return readvals;
+            }
         }
 
+        
         //breaks apart a file and sends the correct chunk specified by the offset/location given
         private static void FileChunk(string path,bool extracopy)
         {
@@ -125,15 +172,64 @@ namespace ConsoleApp1
                 }
             }
         }
-        //TODO: add repeated function system using the functype variable to correctly resend  
-        private static void Udpsend(byte[] sendarray, char functype)
+
+        //chunks out a file, but then calls read on the original and copies
+        // to get the needed bytes to check integrity 
+        private static void readchunk()
         {
-            bool successful = false;
-            Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            IPAddress serveradress = IPAddress.Parse("127.0.0.1");
-            IPEndPoint endPoint = new IPEndPoint(serveradress, 1982);
-            sock.SendTo(sendarray, endPoint);
+            
         }
+
+
+        /// <summary>
+        ///  UDPsend sends a byte array for the write function in the project. if the function sends successfully, it returns true. if it doesnt, it returns false 
+        /// </summary>
+        /// <param name="sendarray"> the byte array that will be sent via udp</param>
+        /// <returns></returns>
+        private static bool Udpsend(byte[] sendarray)
+        {
+            //this code sends the message 
+            bool successful = false;
+            //UDP setup for sending
+            IPEndPoint sendPoint = new IPEndPoint(IPAddress.Loopback, 1982);
+            Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            //UDP setup for receiving 
+            server.SendTo(sendarray, sendarray.Length, SocketFlags.None, sendPoint);
+            successful = UDPrecieve();
+            return successful;
+
+            // this code recieves the ack or data message and chooses to resend if not valid
+            //TODO write receive code, if valid true, if invalid false
+        }
+
+        private static bool UDPrecieve()
+        {
+            bool done = false;
+            UdpClient listener = new UdpClient(1983);
+            IPEndPoint groupEP = new IPEndPoint(IPAddress.Loopback, 1983);
+            string received_data;
+            byte[] receive_byte_array;
+            Console.WriteLine("Waiting for broadcast");
+            receive_byte_array = listener.Receive(ref groupEP);
+            Console.WriteLine("Received a broadcast from IP Address {0}", groupEP.ToString() );
+            received_data = Encoding.ASCII.GetString(receive_byte_array, 0, receive_byte_array.Length);
+            Console.WriteLine("readable data is \n{0}\n\n", received_data);
+            listener.Close();
+            bool successful = false;
+            if (receive_byte_array[receive_byte_array.Length - 1] == 0)
+            {
+                Console.WriteLine("returned Unsuccessful");
+                successful = false;
+            }
+            else if (receive_byte_array[receive_byte_array.Length - 1] == 1)
+            {
+                Console.WriteLine("returned successful");
+                successful= true;
+            }
+
+            return successful;
+        }
+        
 
 //may want to change the main to just accept the filename and milliseconds between corrections
 // this would automate the read and write, and just ensure that the files are correct every n milliseconds 
