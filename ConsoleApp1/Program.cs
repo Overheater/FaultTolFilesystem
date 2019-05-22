@@ -15,7 +15,7 @@ namespace ConsoleApp1
         {
             var opcode = (byte) 'W';
             var locationcode = BitConverter.GetBytes(location);
-            var length = (byte) data.Length;
+            var lengthcode = (byte) data.Length;
             Console.WriteLine(locationcode.Length);
             if (extracopy == false)
             {
@@ -23,13 +23,13 @@ namespace ConsoleApp1
                 {
                     filename = i.ToString() + filename;
                     Console.WriteLine(filename);
-                    var filecode = Encoding.ASCII.GetBytes(filename);
                     var sendarray = new byte[48];
                     sendarray[0] = opcode;
-                    filecode.CopyTo(sendarray, 1);
-                    locationcode.CopyTo(sendarray, 33);
-                    sendarray[37] = length;
-                    data.CopyTo(sendarray, 38);
+                    Byte [] filecode = Encoding.ASCII.GetBytes(filename);
+                    Buffer.BlockCopy(filecode,0,sendarray,1, filecode.Length);
+                    Buffer.BlockCopy(locationcode,0,sendarray,33,4);
+                    sendarray[37] = lengthcode;
+                    Buffer.BlockCopy(data,0,sendarray,38,10);
                     Udpsend(sendarray, 'S');
                 }
             }
@@ -43,7 +43,7 @@ namespace ConsoleApp1
                 sendarray[0] = opcode;
                 filecode.CopyTo(sendarray, 1);
                 locationcode.CopyTo(sendarray, 33);
-                sendarray[37] = length;
+                sendarray[37] = lengthcode;
                 data.CopyTo(sendarray, 38);
                 Udpsend(sendarray, 'S');
              }
