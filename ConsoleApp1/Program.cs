@@ -218,25 +218,38 @@ namespace ConsoleApp1
                         bool Csecond1 = true;
                         bool Csecond2 = true;
                         bool Csecond3 = true;
+                        bool Cthird1 = true;
+                        bool Cthird2 = true;
+                        bool Cthird3 = true;
                         //break each dataset into two different arrays, then compare them for differences 
-                        byte [] first1 = new byte[5];
-                        byte [] first2 = new byte[5];
-                        byte [] first3 = new byte[5];
-                        byte [] second1 = new byte[5];
-                        byte [] second2 = new byte[5];
-                        byte [] second3 = new byte[5];
-                        Array.Copy(correctingdata[0], 0, first1, 0, 5);
-                        Array.Copy(correctingdata[0], 5, second1, 0, 5);
-                        Array.Copy(correctingdata[1], 0, first2, 0, 5);
-                        Array.Copy(correctingdata[1], 5, second2, 0, 5);
-                        Array.Copy(correctingdata[2], 0, first3, 0, 5);
-                        Array.Copy(correctingdata[2], 5, second3, 0, 5);
+                        byte [] first1 = new byte[3];
+                        byte [] first2 = new byte[3];
+                        byte [] first3 = new byte[3];
+                        byte [] second1 = new byte[3];
+                        byte [] second2 = new byte[3];
+                        byte [] second3 = new byte[3];
+                        byte [] third1 = new byte[4];
+                        byte [] third2 = new byte[4];
+                        byte [] third3 = new byte[4];
+                        Array.Copy(correctingdata[0], 0, first1, 0, 3);
+                        Array.Copy(correctingdata[0], 3, second1, 0, 3);
+                        Array.Copy(correctingdata[0], 6, third1, 0, 4);
+                        Array.Copy(correctingdata[1], 0, first2, 0, 3);
+                        Array.Copy(correctingdata[1], 3, second2, 0, 3);
+                        Array.Copy(correctingdata[1], 6, third2, 0, 4);
+                        Array.Copy(correctingdata[2], 0, first3, 0, 3);
+                        Array.Copy(correctingdata[2], 3, second3, 0, 3);
+                        Array.Copy(correctingdata[2], 6, third3, 0, 4);
+                            ;
                         bool first1and2 = first1.SequenceEqual(first2);
                         bool first2and3 = first2.SequenceEqual(first3);
                         bool first3and1 = first3.SequenceEqual(first1);
                         bool second1and2 = second1.SequenceEqual(second2);
                         bool second2and3 = second2.SequenceEqual(second3);
                         bool second3and1 = second3.SequenceEqual(second1);
+                        bool third1and2 = third1.SequenceEqual(third2);
+                        bool third2and3 = third2.SequenceEqual(third3);
+                        bool third3and1 = third3.SequenceEqual(third1);
                         //TODO create if block where if 1!=2, check (1==3) and (2==3) to see which block is wrong 
                         if (first1and2 == false)
                         {
@@ -272,7 +285,7 @@ namespace ConsoleApp1
                                 Cfirst1 = false;
                             }
                         }
-                        //the second half of the data is now checked 
+                        //the second part of the data is now checked 
                         if (second1and2 == false)
                         {
                             if (second2and3 == true)
@@ -307,28 +320,90 @@ namespace ConsoleApp1
                                 Csecond1 = false;
                             }
                         }
+                        //the third part of the data is now checked 
+                        if (third1and2 == false)
+                        {
+                            if (third2and3 == true)
+                            {
+                                Cthird1 = false;
+                            }
+                            else if (third3and1 == true)
+                            {
+                                Cthird2 = false;
+                            }
+                        }
+                        //may need to change this to an else if 
+                        if (third2and3 == false)
+                        {
+                            if (third1and2 == true)
+                            {
+                                Cthird3 = false;
+                            }
+                            else if (third3and1 == true)
+                            {
+                                Cthird2 = false;
+                            }
+                        }
+                        if (third3and1 == false)
+                        {
+                            if (third1and2==true)
+                            {
+                                Cthird3 = false;
+                            }
+                            else if (third2and3 == true)
+                            {
+                                Cthird1 = false;
+                            }
+                        }
+                        
                         //create the data for the write message for any errors found
                         byte [] first = new byte[10];
                         byte [] second = new byte[10];
                         byte [] third = new byte[10];
-                        //if half of the data is incorrect, copy the correct data from another source, then replace the faulty data
-                        if (Cfirst1 == false || Csecond1 == false)
+                        //if some of the data is incorrect, copy the correct data from another source, then replace the faulty data
+                        if (Cfirst1 == false || Csecond1 == false || Cthird1==false)
                         {
-                            if (Cfirst1 == false && Csecond1 == true)
+                            if (Cfirst1 == false && Csecond1 == true && Cthird1 ==true)
                             {
-                                Array.Copy(first2,0,first,0,5);
-                                Array.Copy(second1,0,first,5,5);
-
+                                Array.Copy(first2,0,first,0,3);
+                                Array.Copy(second1,0,first,3,3);
+                                Array.Copy(third1,0,first,6,4);
                             }
-                            else if (Cfirst1 == true && Csecond1 == false)
+                            else if (Cfirst1 == true && Csecond1 == false && Cthird1 ==true)
                             {
-                                Array.Copy(first1,0,first,0,5);
-                                Array.Copy(second2,0,first,5,5);
+                                Array.Copy(first1,0,first,0,3);
+                                Array.Copy(second2,0,first,3,3);
+                                Array.Copy(third1,0,first,6,4);
+                            }
+                            else if (Cfirst1 == true && Csecond1 == true && Cthird1 ==false)
+                            {
+                                Array.Copy(first1,0,first,0,3);
+                                Array.Copy(second1,0,first,3,3);
+                                Array.Copy(third2,0,first,6,4);
+                            }
+                            else if (Cfirst1 == false && Csecond1 == false && Cthird1 ==true)
+                            {
+                                Array.Copy(first2,0,first,0,3);
+                                Array.Copy(second2,0,first,3,3);
+                                Array.Copy(third1,0,first,6,4);
+                            }
+                            else if (Cfirst1 == false && Csecond1 == true && Cthird1 ==false)
+                            {
+                                Array.Copy(first2,0,first,0,3);
+                                Array.Copy(second1,0,first,3,3);
+                                Array.Copy(third2,0,first,6,4);
+                            }
+                            else if (Cfirst1 == true && Csecond1 == false && Cthird1 ==false)
+                            {
+                                Array.Copy(first1,0,first,0,3);
+                                Array.Copy(second2,0,first,3,3);
+                                Array.Copy(third2,0,first,6,4);
                             }
                             else
                             {
-                                Array.Copy(first2,0,first,0,5);
-                                Array.Copy(second2,0,first,5,5);
+                                Array.Copy(first2,0,first,0,3);
+                                Array.Copy(second2,0,first,3,3);
+                                Array.Copy(third2,0,first,6,4);
                             }
                             byte [] filename = new byte[32];
                             byte [] location = new byte[4];
@@ -337,23 +412,49 @@ namespace ConsoleApp1
                             ReadToWrite(first,filename,location);
                         }
                         
-                        if (Cfirst2 == false || Csecond2 == false)
+                        if (Cfirst2 == false || Csecond2 == false || Cthird2==false)
                         {
-                            if (Cfirst2 == false && Csecond2 == true)
+                            if (Cfirst2 == false && Csecond2 == true && Cthird2 ==true)
                             {
-                                Array.Copy(first3,0,second,0,5);
-                                Array.Copy(second2,0,second,5,5);
-
+                                Array.Copy(first3,0,second,0,3);
+                                Array.Copy(second2,0,second,3,3);
+                                Array.Copy(third2,0,second,6,4);
                             }
-                            else if (Cfirst2 == true && Csecond2 == false)
+                            else if (Cfirst2 == true && Csecond2 == false && Cthird2 ==true)
                             {
-                                Array.Copy(first2,0,second,0,5);
-                                Array.Copy(second3,0,second,5,5);
+                                Array.Copy(first2,0,second,0,3);
+                                Array.Copy(second3,0,second,3,3);
+                                Array.Copy(third2,0,second,6,4);
+                            }
+                            else if (Cfirst2 == true && Csecond2 == true && Cthird2 ==false)
+                            {
+                                Array.Copy(first2,0,second,0,3);
+                                Array.Copy(second2,0,second,3,3);
+                                Array.Copy(third3,0,second,6,4);
+                            }
+                            else if (Cfirst2 == false && Csecond2 == false && Cthird2 ==true)
+                            {
+                                Array.Copy(first3,0,second,0,3);
+                                Array.Copy(second3,0,second,3,3);
+                                Array.Copy(third2,0,second,6,4);
+                            }
+                            else if (Cfirst2 == false && Csecond2 == true && Cthird2 ==false)
+                            {
+                                Array.Copy(first3,0,second,0,3);
+                                Array.Copy(second2,0,second,3,3);
+                                Array.Copy(third3,0,second,6,4);
+                            }
+                            else if (Cfirst2 == true && Csecond2 == false && Cthird2 ==false)
+                            {
+                                Array.Copy(first2,0,second,0,3);
+                                Array.Copy(second3,0,second,3,3);
+                                Array.Copy(third3,0,second,6,4);
                             }
                             else
                             {
-                                Array.Copy(first3,0,second,0,5);
-                                Array.Copy(second3,0,second,5,5);
+                                Array.Copy(first3,0,second,0,3);
+                                Array.Copy(second3,0,second,3,3);
+                                Array.Copy(third3,0,second,6,4);
                             }
                             byte [] filename = new byte[32];
                             byte [] location = new byte[4];
@@ -361,24 +462,49 @@ namespace ConsoleApp1
                             Array.Copy(checkbytes[1], 33, location, 0, 4);
                             ReadToWrite(second,filename,location);
                         }
-                        
-                        if (Cfirst3 == false || Csecond3 == false)
+                        if (Cfirst3 == false || Csecond3 == false || Cthird3==false)
                         {
-                            if (Cfirst3 == false && Csecond3 == true)
+                            if (Cfirst3 == false && Csecond3 == true && Cthird3 ==true)
                             {
-                                Array.Copy(first1,0,third,0,5);
-                                Array.Copy(second3,0,third,5,5);
-
+                                Array.Copy(first1,0,third,0,3);
+                                Array.Copy(second3,0,third,3,3);
+                                Array.Copy(third3,0,third,6,4);
                             }
-                            else if (Cfirst3 == true && Csecond3 == false)
+                            else if (Cfirst3 == true && Csecond3 == false && Cthird3 ==true)
                             {
-                                Array.Copy(first3,0,third,0,5);
-                                Array.Copy(second1,0,third,5,5);
+                                Array.Copy(first3,0,third,0,3);
+                                Array.Copy(second1,0,third,3,3);
+                                Array.Copy(third3,0,third,6,4);
+                            }
+                            else if (Cfirst3 == true && Csecond3 == true && Cthird3 ==false)
+                            {
+                                Array.Copy(first3,0,third,0,3);
+                                Array.Copy(second3,0,third,3,3);
+                                Array.Copy(third1,0,third,6,4);
+                            }
+                            else if (Cfirst3 == false && Csecond3 == false && Cthird3 ==true)
+                            {
+                                Array.Copy(first1,0,third,0,3);
+                                Array.Copy(second1,0,third,3,3);
+                                Array.Copy(third3,0,third,6,4);
+                            }
+                            else if (Cfirst3 == false && Csecond3 == true && Cthird3 ==false)
+                            {
+                                Array.Copy(first1,0,third,0,3);
+                                Array.Copy(second3,0,third,3,3);
+                                Array.Copy(third1,0,third,6,4);
+                            }
+                            else if (Cfirst3 == true && Csecond3 == false && Cthird3 ==false)
+                            {
+                                Array.Copy(first3,0,third,0,3);
+                                Array.Copy(second1,0,third,3,3);
+                                Array.Copy(third1,0,third,6,4);
                             }
                             else
                             {
-                                Array.Copy(first1,0,third,0,5);
-                                Array.Copy(second1,0,third,5,5);
+                                Array.Copy(first1,0,third,0,3);
+                                Array.Copy(second1,0,third,3,3);
+                                Array.Copy(third1,0,third,6,4);
                             }
                             byte [] filename = new byte[32];
                             byte [] location = new byte[4];
@@ -521,7 +647,6 @@ namespace ConsoleApp1
         private static void Main(string[] args)
         {
             Stopwatch sw = new Stopwatch();
-            sw.Start();
             if (args.Length < 3)
             {
                 Console.WriteLine(
@@ -539,6 +664,11 @@ namespace ConsoleApp1
                 if (args[1] == "-N")
                 {
                     FileChunk(args[0], false);
+                    Console.WriteLine("***************");
+                    Console.WriteLine("*WRITE IS DONE*");
+                    Console.WriteLine("***************");
+                    System.Threading.Thread.Sleep (2000);
+                    sw.Start();
                     while (true)
                     {
                         readchunk(args[0], false);
@@ -551,6 +681,7 @@ namespace ConsoleApp1
                             break;
                         }
                     }
+                    System.Threading.Thread.Sleep (2000);
                     readchunk(args[0], false);
                     System.Threading.Thread.Sleep (500);
                     readchunk(args[0], false);
