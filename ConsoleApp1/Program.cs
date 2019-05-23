@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Timers;
 
 
 //C:\Users\Ian\Documents\6890\FirstProject\targetfolder
@@ -209,6 +211,13 @@ namespace ConsoleApp1
                             correctingdata[1][k] = checkbytes[1][j];
                             correctingdata[2][k] = checkbytes[2][j];
                         }
+                        //the bools for which data blocks are incorrect
+                        bool Cfirst1 = true;
+                        bool Cfirst2 = true;
+                        bool Cfirst3 = true;
+                        bool Csecond1 = true;
+                        bool Csecond2 = true;
+                        bool Csecond3 = true;
                         //break each dataset into two different arrays, then compare them for differences 
                         byte [] first1 = new byte[5];
                         byte [] first2 = new byte[5];
@@ -217,22 +226,166 @@ namespace ConsoleApp1
                         byte [] second2 = new byte[5];
                         byte [] second3 = new byte[5];
                         Array.Copy(correctingdata[0], 0, first1, 0, 5);
-                        Array.Copy(correctingdata[0], 4, second1, 0, 5);
+                        Array.Copy(correctingdata[0], 5, second1, 0, 5);
                         Array.Copy(correctingdata[1], 0, first2, 0, 5);
-                        Array.Copy(correctingdata[1], 4, second2, 0, 5);
+                        Array.Copy(correctingdata[1], 5, second2, 0, 5);
                         Array.Copy(correctingdata[2], 0, first3, 0, 5);
-                        Array.Copy(correctingdata[2], 4, second3, 0, 5);
+                        Array.Copy(correctingdata[2], 5, second3, 0, 5);
                         bool first1and2 = first1.SequenceEqual(first2);
                         bool first2and3 = first2.SequenceEqual(first3);
                         bool first3and1 = first3.SequenceEqual(first1);
                         bool second1and2 = second1.SequenceEqual(second2);
                         bool second2and3 = second2.SequenceEqual(second3);
                         bool second3and1 = second3.SequenceEqual(second1);
+                        //TODO create if block where if 1!=2, check (1==3) and (2==3) to see which block is wrong 
+                        if (first1and2 == false)
+                        {
+                            if (first2and3 == true)
+                            {
+                                Cfirst1 = false;
+                            }
+                            else if (first3and1 == true)
+                            {
+                                Cfirst2 = false;
+                            }
+                        }
+                        //may need to change this to an else if 
+                        if (first2and3 == false)
+                        {
+                            if (first1and2 == true)
+                            {
+                                Cfirst3 = false;
+                            }
+                            else if (first3and1 == true)
+                            {
+                                Cfirst2 = false;
+                            }
+                        }
+                        if (first3and1 == false)
+                        {
+                            if (first1and2==true)
+                            {
+                                Cfirst3 = false;
+                            }
+                            else if (first2and3 == true)
+                            {
+                                Cfirst1 = false;
+                            }
+                        }
+                        //the second half of the data is now checked 
+                        if (second1and2 == false)
+                        {
+                            if (second2and3 == true)
+                            {
+                                Csecond1 = false;
+                            }
+                            else if (second3and1 == true)
+                            {
+                                Csecond2 = false;
+                            }
+                        }
+                        //may need to change this to an else if 
+                        if (second2and3 == false)
+                        {
+                            if (second1and2 == true)
+                            {
+                                Csecond3 = false;
+                            }
+                            else if (second3and1 == true)
+                            {
+                                Csecond2 = false;
+                            }
+                        }
+                        if (second3and1 == false)
+                        {
+                            if (second1and2==true)
+                            {
+                                Csecond3 = false;
+                            }
+                            else if (second2and3 == true)
+                            {
+                                Csecond1 = false;
+                            }
+                        }
+                        //create the data for the write message for any errors found
+                        byte [] first = new byte[10];
+                        byte [] second = new byte[10];
+                        byte [] third = new byte[10];
+                        //if half of the data is incorrect, copy the correct data from another source, then replace the faulty data
+                        if (Cfirst1 == false || Csecond1 == false)
+                        {
+                            if (Cfirst1 == false && Csecond1 == true)
+                            {
+                                Array.Copy(first2,0,first,0,5);
+                                Array.Copy(second1,0,first,5,5);
+
+                            }
+                            else if (Cfirst1 == true && Csecond1 == false)
+                            {
+                                Array.Copy(first1,0,first,0,5);
+                                Array.Copy(second2,0,first,5,5);
+                            }
+                            else
+                            {
+                                Array.Copy(first2,0,first,0,5);
+                                Array.Copy(second2,0,first,5,5);
+                            }
+                            byte [] filename = new byte[32];
+                            byte [] location = new byte[4];
+                            Array.Copy(checkbytes[0], 1, filename, 0, 32);
+                            Array.Copy(checkbytes[0], 33, location, 0, 4);
+                            ReadToWrite(first,filename,location);
+                        }
                         
+                        if (Cfirst2 == false || Csecond2 == false)
+                        {
+                            if (Cfirst2 == false && Csecond2 == true)
+                            {
+                                Array.Copy(first3,0,second,0,5);
+                                Array.Copy(second2,0,second,5,5);
 
+                            }
+                            else if (Cfirst2 == true && Csecond2 == false)
+                            {
+                                Array.Copy(first2,0,second,0,5);
+                                Array.Copy(second3,0,second,5,5);
+                            }
+                            else
+                            {
+                                Array.Copy(first3,0,second,0,5);
+                                Array.Copy(second3,0,second,5,5);
+                            }
+                            byte [] filename = new byte[32];
+                            byte [] location = new byte[4];
+                            Array.Copy(checkbytes[1], 1, filename, 0, 32);
+                            Array.Copy(checkbytes[1], 33, location, 0, 4);
+                            ReadToWrite(second,filename,location);
+                        }
+                        
+                        if (Cfirst3 == false || Csecond3 == false)
+                        {
+                            if (Cfirst3 == false && Csecond3 == true)
+                            {
+                                Array.Copy(first1,0,third,0,5);
+                                Array.Copy(second3,0,third,5,5);
 
-
-
+                            }
+                            else if (Cfirst3 == true && Csecond3 == false)
+                            {
+                                Array.Copy(first3,0,third,0,5);
+                                Array.Copy(second1,0,third,5,5);
+                            }
+                            else
+                            {
+                                Array.Copy(first1,0,third,0,5);
+                                Array.Copy(second1,0,third,5,5);
+                            }
+                            byte [] filename = new byte[32];
+                            byte [] location = new byte[4];
+                            Array.Copy(checkbytes[2], 1, filename, 0, 32);
+                            Array.Copy(checkbytes[2], 33, location, 0, 4);
+                            ReadToWrite(third,filename,location);
+                        }
                     }
                 }
                 else
@@ -249,6 +402,25 @@ namespace ConsoleApp1
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// creates a write message from the readchunk function to correct any bitflips
+        /// </summary>
+        private static void ReadToWrite(Byte[] data, Byte[] file, Byte[] location)
+        {
+            byte [] sendarray = new byte[48];
+            sendarray[0] = (byte)'W';
+            Buffer.BlockCopy(file, 0, sendarray, 1, 32);
+            Buffer.BlockCopy(location, 0, sendarray, 33, 4);
+            sendarray[37] = (byte)data.Length;
+            Buffer.BlockCopy(data, 0, sendarray, 38, 10);
+            bool sent = Udpsend(sendarray);
+            while (sent == false)
+            {
+                sent = Udpsend(sendarray);
+            }
+            System.Threading.Thread.Sleep (15);
         }
         
 
@@ -343,29 +515,46 @@ namespace ConsoleApp1
         }
 
 
+
 //may want to change the main to just accept the filename and milliseconds between corrections
 // this would automate the read and write, and just ensure that the files are correct every n milliseconds 
         private static void Main(string[] args)
         {
-            if (args.Length < 2)
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            if (args.Length < 3)
             {
                 Console.WriteLine(
                     "Please enter a complete argument. Accepted form is <program> <file name> <extra copies?: -Y or -N>");
                 return;
             }
-            else if (args.Length > 2)
+            else if (args.Length > 3)
             {
                 Console.WriteLine(
                     "Please enter only 2 accepted arguments. Accepted form is <program> <file name> <extra copies?: -Y or -N>");
                 return;
             }
-            else if (args.Length == 2)
+            else if (args.Length == 3)
             {
                 if (args[1] == "-N")
                 {
                     FileChunk(args[0], false);
+                    while (true)
+                    {
+                        readchunk(args[0], false);
+                        System.Threading.Thread.Sleep (100);
+                        if (sw.ElapsedMilliseconds >= Convert.ToInt32(args[2]))
+                        {
+                            Console.WriteLine("************");
+                            Console.WriteLine("*TIME IS UP*");
+                            Console.WriteLine("************");
+                            break;
+                        }
+                    }
                     readchunk(args[0], false);
-                    return;
+                    System.Threading.Thread.Sleep (500);
+                    readchunk(args[0], false);
+                    
                 }
                 else if (args[1] == "-Y")
                 {
@@ -376,6 +565,7 @@ namespace ConsoleApp1
 
                     return;
                 }
+                return;
             }
         }
     }
