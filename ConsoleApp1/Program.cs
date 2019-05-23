@@ -251,14 +251,6 @@ namespace ConsoleApp1
             }
         }
         
-        static extern int memcmp(byte[] b1, byte[] b2, long count);
-
-        static bool ByteArrayCompare(byte[] b1, byte[] b2)
-        {
-            // Validate buffers are the same length.
-            // This also ensures that the count does not exceed the length of either buffer.  
-            return b1.Length == b2.Length && memcmp(b1, b2, b1.Length) == 0;
-        }
 
         /// <summary>
         ///  UDPsend sends a byte array for the write function in the project. if the function sends successfully, it returns true. if it doesnt, it returns false 
