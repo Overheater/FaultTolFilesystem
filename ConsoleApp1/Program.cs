@@ -62,7 +62,7 @@ namespace ConsoleApp1
         // sends a read message containing, the opcode R
         // the filename,and the location/offset
         //TODO: create an array of byte arrays to send down to the read chunk function. 
-        private byte[][] SendRead(string filename, int location,bool extracopy)
+        private static byte[][] SendRead(string filename, int location,bool extracopy)
         {
             if (extracopy == true)
             {
@@ -77,12 +77,12 @@ namespace ConsoleApp1
                     sendarray[0] = opcode;
                     filecode.CopyTo(sendarray,1);
                     locationcode.CopyTo(sendarray,33);
-                    bool sent = Udpsend(sendarray);
-                    while (sent == false)
+                    Tuple<bool,byte[]> sent = UdpReadsend(sendarray);
+                    while (sent.Item1 == false)
                     {
-                         sent = Udpsend(sendarray);
+                         sent = UdpReadsend(sendarray);
                     }
-
+                    readvals[i] = sent.Item2;
 
                 }
                 return readvals;
@@ -101,12 +101,14 @@ namespace ConsoleApp1
                     sendarray[0] = opcode;
                     filecode.CopyTo(sendarray,1);
                     locationcode.CopyTo(sendarray,33);
-                    bool sent = Udpsend(sendarray);
-                    while (sent == false)
+                    Tuple<bool,byte[]> sent = UdpReadsend(sendarray);
+                    while (sent.Item1 == false)
                     {
-                         sent = Udpsend(sendarray);
+                        sent = UdpReadsend(sendarray);
                     }
-                    
+
+                    readvals[i] = sent.Item2;
+
 
                 }
                 return readvals;
@@ -174,9 +176,42 @@ namespace ConsoleApp1
         }
 
         //chunks out a file, but then calls read on the original and copies
-        // to get the needed bytes to check integrity 
-        private static void readchunk()
+        // then uses the bytes found to check integrity
+        //TODO create voting system function or inline that ensures data integrity
+        private static void readchunk(string path, bool extracopy)
         {
+            byte [] fileBytes = File.ReadAllBytes(path);
+            int size = fileBytes.Length;
+            
+            for (int i = 0; i <= fileBytes.Length; i += 10)
+            {
+                if (size - i >= 10)
+                {
+                    if (extracopy == true)
+                    {
+                        byte [][] checkBytes = new byte[6][];
+                        checkBytes= SendRead(path, i,true);
+                    }
+                    else if (extracopy == false)
+                    {
+                        byte [][] checkBytes = new byte[3][];
+                        checkBytes= SendRead(path, i,false);
+                    }
+                }
+                else
+                {
+                    if (extracopy == true)
+                    {
+                        byte [][] checkBytes = new byte[6][];
+                        checkBytes= SendRead(path, i,true);
+                    }
+                    else if (extracopy == false)
+                    {
+                        byte [][] checkBytes = new byte[3][];
+                        checkBytes= SendRead(path, i,false);
+                    }
+                }
+            }
             
         }
 
@@ -195,14 +230,15 @@ namespace ConsoleApp1
             Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             //UDP setup for receiving 
             server.SendTo(sendarray, sendarray.Length, SocketFlags.None, sendPoint);
-            successful = UDPrecieve();
+            successful = UdpReceive();
             return successful;
-
-            // this code recieves the ack or data message and chooses to resend if not valid
-            //TODO write receive code, if valid true, if invalid false
         }
 
-        private static bool UDPrecieve()
+        /// <summary>
+        /// UdpReceive receives the ACK packet that is sent back from the corrupter executable and checks if the write packet successfully went through 
+        /// </summary>
+        /// <returns> true for a successful write, false otherwise </returns>
+        private static bool UdpReceive()
         {
             bool done = false;
             UdpClient listener = new UdpClient(1983);
@@ -229,6 +265,46 @@ namespace ConsoleApp1
 
             return successful;
         }
+        private static Tuple<bool,byte[]> UdpReadsend(byte[] sendarray)
+        {
+            //this code sends the message 
+            //UDP setup for sending
+            IPEndPoint sendPoint = new IPEndPoint(IPAddress.Loopback, 1982);
+            Socket server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            //UDP setup for receiving 
+            server.SendTo(sendarray, sendarray.Length, SocketFlags.None, sendPoint);
+            Tuple<bool,byte[]> successful = UdpReadReceive();
+            return successful;
+        }
+        private static Tuple<bool,byte[]> UdpReadReceive()
+        {
+            UdpClient listener = new UdpClient(1983);
+            IPEndPoint groupEP = new IPEndPoint(IPAddress.Loopback, 1983);
+            string received_data;
+            byte[] receive_byte_array;
+            Console.WriteLine("Waiting for broadcast");
+            receive_byte_array = listener.Receive(ref groupEP);
+            Console.WriteLine("Received a broadcast from IP Address {0}", groupEP.ToString() );
+            received_data = Encoding.ASCII.GetString(receive_byte_array, 0, receive_byte_array.Length);
+            Console.WriteLine("readable data is \n{0}\n\n", received_data);
+            listener.Close();
+            bool successful = false;
+            byte[] data = new byte[49];
+            if (receive_byte_array[receive_byte_array.Length - 1] == 0)
+            {
+                Console.WriteLine("returned Unsuccessful");
+            }
+            else if (receive_byte_array[receive_byte_array.Length - 1] == 1)
+            {
+                Console.WriteLine("returned successful");
+                successful= true;
+                data = receive_byte_array;
+            }
+
+            return new Tuple<bool, byte[]>(successful, data);
+        }
+        
+        
         
 
 //may want to change the main to just accept the filename and milliseconds between corrections
@@ -250,10 +326,7 @@ namespace ConsoleApp1
                 if (args[1] == "-N")
                 {
                     FileChunk(args[0],false);
-                    while (true)
-                    {
-                    
-                    }
+                    readchunk(args[0],false);
                 }
                 else if (args[1] == "-Y")
                 {
